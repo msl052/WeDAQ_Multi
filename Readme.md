@@ -16,11 +16,11 @@
 - If you do not wish to use the unchain mode, simply remove or comment out the board.config_board("P") in the later parts of the blsl.ipynb code.
 
 ## How to Run the Code for LSL Streaming
-Download Anaconda
-Upload the BrainflowAnacondaEnv.yaml environment to created Anaconda Environment tailored for this code
-Open blsl1.ipynb. Find the correct ip address for the OpenBCI Wifi Board connected to your router and type that ip address to the params.ip_addres = 
-For multiple streams, open blsl2.ipynb or copy a new blsl1.ipynb file to how many OpenBCI Wifi Boards you plan to play at once. 
-Make sure all boards are connected to the router which your computer is connected to. Type the corresponding ip_address for each blsl ipynb file and make sure the params.ip_port is different for each OpenBCI boards.
+- Download Anaconda
+- Upload the BrainflowAnacondaEnv.yaml environment to created Anaconda Environment tailored for this code
+- Open blsl1.ipynb. Find the correct ip address for the OpenBCI Wifi Board connected to your router and type that ip address to the params.ip_addres = 
+- For multiple streams, open blsl2.ipynb or copy a new blsl1.ipynb file to how many OpenBCI Wifi Boards you plan to play at once. 
+- Make sure all boards are connected to the router which your computer is connected to. Type the corresponding ip_address for each blsl ipynb file and make sure the params.ip_port is different for each OpenBCI boards.
 
 
 ## Lab Recorder
