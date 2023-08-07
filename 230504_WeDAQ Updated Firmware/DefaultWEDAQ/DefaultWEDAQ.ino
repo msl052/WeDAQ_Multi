@@ -51,7 +51,7 @@ void loop() {
         // Verify the SD file is open
         if(SDfileOpen) {
           // Write to the SD card, writes aux data
-          writeDataToSDcard(board.sampleCounter);
+          writeDataToSDcard(wedaq.sampleCounter);
         }
 
         // Send the channel data
@@ -100,7 +100,7 @@ void loop() {
       wifidown = false;
     }
 
-    if (wedaq.hasData()) {
+    if (wifi.hasData()) {
 
       // Read one char from the wifi shield
       char newChar = wifi.getChar();

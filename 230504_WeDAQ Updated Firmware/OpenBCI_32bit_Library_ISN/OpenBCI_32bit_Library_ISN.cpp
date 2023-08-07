@@ -1354,7 +1354,7 @@ void __USER_ISR ADS_DRDY_Service()
   clearIntFlag(_EXTERNAL_4_IRQ); // clear the irq, or else it will continually interrupt!
   if (bitRead(PORTA, 0) == 0)
   {
-    board.channelDataAvailable = true;
+    wedaq.channelDataAvailable = true;
   }
 }
 

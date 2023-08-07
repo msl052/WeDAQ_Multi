@@ -16,7 +16,7 @@ int blockCounter = 0;
 
 uint32_t BLOCK_COUNT;
 SdFile openfile;  // want to put this before setup...
-Sd2Card card(&board.spi,SD_SS);// SPI needs to be init'd before here
+Sd2Card card(&wedaq.spi,SD_SS);// SPI needs to be init'd before here
 SdVolume volume;
 SdFile root;
 uint8_t* pCache;      // array that points to the block buffer on SD card
@@ -90,21 +90,21 @@ boolean setupSDcard(char limit){
 
   if(!cardInit){
       if(!card.init(SPI_FULL_SPEED, SD_SS)) {
-        if(!board.streaming) {
+        if(!wedaq.streaming) {
           Serial0.println("initialization failed. Things to check:");
           Serial0.println("* is a card is inserted?");
         }
       //    card.init(SPI_FULL_SPEED, SD_SS);
       } else {
-        if(!board.streaming) {
+        if(!wedaq.streaming) {
           Serial0.println("Wiring is correct and a card is present.");
         }
         cardInit = true;
       }
       if (!volume.init(card)) { // Now we will try to open the 'volume'/'partition' - it should be FAT16 or FAT32
-        if(!board.streaming) {
+        if(!wedaq.streaming) {
           Serial0.println("Could not find FAT16/FAT32 partition. Make sure you've formatted the card");
-          board.sendEOT();
+          wedaq.sendEOT();
         }
         return fileIsOpen;
       }
@@ -133,9 +133,9 @@ boolean setupSDcard(char limit){
     case 'L':
       BLOCK_COUNT = BLOCK_24HR; break;
     default:
-      if(!board.streaming) {
+      if(!wedaq.streaming) {
         Serial0.println("invalid BLOCK count");
-        board.sendEOT(); // Write end of transmission because we exit here
+        wedaq.sendEOT(); // Write end of transmission because we exit here
       }
       return fileIsOpen;
   }
@@ -145,14 +145,14 @@ boolean setupSDcard(char limit){
   openfile.remove(root, currentFileName); // if the file is over-writing, let it!
 
   if (!openfile.createContiguous(root, currentFileName, BLOCK_COUNT*512UL)) {
-    if(!board.streaming) {
+    if(!wedaq.streaming) {
       Serial0.print("createfdContiguous fail");
     }
     cardInit = false;
   }//else{Serial0.print("got contiguous file...");delay(1);}
   // get the location of the file's blocks
   if (!openfile.contiguousRange(&bgnBlock, &endBlock)) {
-    if(!board.streaming) {
+    if(!wedaq.streaming) {
       Serial0.print("get contiguousRange fail");
     }
     cardInit = false;
@@ -161,13 +161,13 @@ boolean setupSDcard(char limit){
   pCache = (uint8_t*)volume.cacheClear();
   // tell card to setup for multiple block write with pre-erase
   if (!card.erase(bgnBlock, endBlock)){
-    if(!board.streaming) {
+    if(!wedaq.streaming) {
       Serial0.println("erase block fail");
     }
     cardInit = false;
   }//else{Serial0.print("erased...");delay(1);}
   if (!card.writeStart(bgnBlock, BLOCK_COUNT)){
-    if(!board.streaming) {
+    if(!wedaq.streaming) {
       Serial0.println("writeStart fail");
     }
     cardInit = false;
@@ -175,7 +175,7 @@ boolean setupSDcard(char limit){
     fileIsOpen = true;
     delay(1);
   }
-  board.csHigh(SD_SS);  // release the spi
+  wedaq.csHigh(SD_SS);  // release the spi
   // initialize write-time overrun error counter and min/max wirte time benchmarks
   overruns = 0;
   maxWriteTime = 0;
@@ -183,25 +183,25 @@ boolean setupSDcard(char limit){
   byteCounter = 0;  // counter from 0 - 512
   blockCounter = 0; // counter from 0 - BLOCK_COUNT;
   if(fileIsOpen == true){  // send corresponding file name to controlling program
-    if(!board.streaming) {
+    if(!wedaq.streaming) {
       Serial0.print("Corresponding SD file ");
       Serial0.println(currentFileName);
     }
   }
-  if(!board.streaming) {
-    board.sendEOT();
+  if(!wedaq.streaming) {
+    wedaq.sendEOT();
   }
   return fileIsOpen;
 }
 
 boolean closeSDfile(){
   if(fileIsOpen){
-    board.csLow(SD_SS);  // take spi
+    wedaq.csLow(SD_SS);  // take spi
     card.writeStop();
     openfile.close();
-    board.csHigh(SD_SS);  // release the spi
+    wedaq.csHigh(SD_SS);  // release the spi
     fileIsOpen = false;
-    if(!board.streaming){ // verbosity. this also gets insterted as footer in openFile
+    if(!wedaq.streaming){ // verbosity. this also gets insterted as footer in openFile
       Serial0.print("Total Elapsed Time: ");Serial0.print(t);Serial0.println(" mS"); //delay(10);
       Serial0.print("Max write time: "); Serial0.print(maxWriteTime); Serial0.println(" uS"); //delay(10);
       Serial0.print("Min write time: ");Serial0.print(minWriteTime); Serial0.println(" uS"); //delay(10);
@@ -213,12 +213,12 @@ boolean closeSDfile(){
           Serial0.print(over[i].block); Serial0.print(','); Serial0.println(over[i].micro);
         }
       }
-      board.sendEOT();
+      wedaq.sendEOT();
     }
   }else{
-    if(!board.streaming) {
+    if(!wedaq.streaming) {
       Serial0.println("No open file to close");
-      board.sendEOT();
+      wedaq.sendEOT();
     }
   }
   // delay(100); // cool down
@@ -231,17 +231,17 @@ void writeDataToSDcard(byte sampleNumber){
   convertToHex(sampleNumber, 1, addComma);
   // convert 24 bit channelData into HEX
   for (int currentChannel = 0; currentChannel < 8; currentChannel++){
-    convertToHex(board.boardChannelDataInt[currentChannel], 5, addComma);
-    if(board.daisyPresent == false){
+    convertToHex(wedaq.boardChannelDataInt[currentChannel], 5, addComma);
+    if(wedaq.daisyPresent == false){
       if(currentChannel == 6){
         addComma = false;
         if(addAuxToSD || addAccelToSD) {addComma = true;}  // format CSV
       }
     }
   }
-  if(board.daisyPresent){
+  if(wedaq.daisyPresent){
     for (int currentChannel = 0; currentChannel < 8; currentChannel++){
-      convertToHex(board.daisyChannelDataInt[currentChannel], 5, addComma);
+      convertToHex(wedaq.daisyChannelDataInt[currentChannel], 5, addComma);
       if(currentChannel == 6){
         addComma = false;
         if(addAuxToSD || addAccelToSD) {addComma = true;}  // format CSV
@@ -252,7 +252,7 @@ void writeDataToSDcard(byte sampleNumber){
   if(addAuxToSD == true){
     // convert auxData into HEX
     for(int currentChannel = 0; currentChannel <  3; currentChannel++){
-      convertToHex(board.auxData[currentChannel], 3, addComma);
+      convertToHex(wedaq.auxData[currentChannel], 3, addComma);
       if(currentChannel == 1) addComma = false;
     }
     addAuxToSD = false;
@@ -260,7 +260,7 @@ void writeDataToSDcard(byte sampleNumber){
   else if(addAccelToSD == true){  // if we have accelerometer data to log
     // convert 16 bit accelerometer data into HEX
     for (int currentChannel = 0; currentChannel < 3; currentChannel++){
-      convertToHex(board.axisData[currentChannel], 3, addComma);
+      convertToHex(wedaq.axisData[currentChannel], 3, addComma);
       if(currentChannel == 1) addComma = false;
     }
     addAccelToSD = false;  // reset addAccel
@@ -273,14 +273,14 @@ void writeDataToSDcard(byte sampleNumber){
 void writeCache(){
     if(blockCounter > BLOCK_COUNT) return;
     uint32_t tw = micros();  // start block write timer
-    board.csLow(SD_SS);  // take spi
+    wedaq.csLow(SD_SS);  // take spi
     if(!card.writeData(pCache)) {
-      if (!board.streaming) {
+      if (!wedaq.streaming) {
         Serial0.println("block write fail");
-        board.sendEOT();
+        wedaq.sendEOT();
       }
     }   // write the block
-    board.csHigh(SD_SS);  // release spi
+    wedaq.csHigh(SD_SS);  // release spi
     tw = micros() - tw;      // stop block write timer
     if (tw > maxWriteTime) maxWriteTime = tw;  // check for max write time
     if (tw < minWriteTime) minWriteTime = tw;  // check for min write time
@@ -295,9 +295,9 @@ void writeCache(){
     blockCounter++;    // increment BLOCK counter
     if(blockCounter == BLOCK_COUNT-1){
       t = millis() - t;
-      board.streamStop();
+      wedaq.streamStop();
     //   stopRunning();
-      board.disable_accel();
+      wedaq.disable_accel();
       writeFooter();
     }
     if(blockCounter == BLOCK_COUNT){
