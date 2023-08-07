@@ -7,7 +7,7 @@ an OpenBCI 32bit board with an OpenBCI Daisy Module attached.
 
 */
 
-#include "OpenBCI_32bit_Library.h"
+#include "OpenBCI_32bit_Library_ISN.h"
 
 /***************************************************/
 /** PUBLIC METHODS *********************************/
@@ -469,25 +469,25 @@ boolean OpenBCI_32bit_Library::processChar(char character)
       sendEOT();
       break;
     case OPENBCI_WIFI_ONLINE:
-      wifi.streamState = true;
-      printSerial("Wifi Strean State Toggled to ONLINE");
+      streamState = true;
+      printSerial("Wifi Stream State Toggled to ONLINE");
       sendEOT();
       break;
     case OPENBCI_WIFI_DARK:
-      wifi.streamState = false;
-      printSerial("Wifi Strean State Toggled to DARK");
+      streamState = false;
+      printSerial("Wifi Stream State Toggled to DARK");
       sendEOT();
       break;
     case OPENBCI_WIFI_UNCHAIN:
-      wifi.unchain = true;
-      printSerial("Wifi Strean State Toggled to UNCHAINED");
+      unchain = true;
+      printSerial("Wifi Stream Mode Toggled to UNCHAINED");
       sendEOT();
       break;
     case OPENBCI_WIFI_CHAIN:
-        wifi.unchain = false;
-        printSerial("Wifi Strean State Toggled to CHAINED");
-        sendEOT();
-        break;
+      unchain = false;
+      printSerial("Wifi Stream Mode Toggled to CHAINED");
+      sendEOT();
+      break;
     case OPENBCI_GET_VERSION:
       printAll("v3.1.2");
       sendEOT();
@@ -1368,9 +1368,9 @@ void OpenBCI_32bit_Library::initializeVariables(void)
   streaming = false;
   verbosity = false; // when verbosity is true, there will be Serial feedback
 
-  // Akshay Paul edit: Wifi State Control
-  wifi.streamState = true;
-  wifi.unchain = false;
+  // Wifi State Control
+  streamState = true;
+  unchain = false;
 
   // Nums
   ringBufBLEHead = 0;
@@ -1389,7 +1389,7 @@ void OpenBCI_32bit_Library::initializeVariables(void)
   curBoardMode = BOARD_MODE_DEFAULT;
   curDebugMode = DEBUG_MODE_OFF;
   curPacketType = PACKET_TYPE_ACCEL;
-  curSampleRate = SAMPLE_RATE_500; // Min: made the default sampling_rate to 500
+  curSampleRate = SAMPLE_RATE_500; // Changed the default sampling_rate to 500
   curTimeSyncMode = TIME_SYNC_MODE_OFF;
 
   // Structs
@@ -1979,7 +1979,7 @@ void OpenBCI_32bit_Library::initialize_ads()
     delay(40);
   }
 
-  // DEFAULT CHANNEL SETTINGS FOR ADS : Min Changed the default of ADS Channel settings
+  // DEFAULT CHANNEL SETTINGS FOR ADS : Changed the default of ADS Channel settings
   defaultChannelSettings[POWER_DOWN] = NO;                  // on = NO, off = YES
   defaultChannelSettings[GAIN_SET] = ADS_GAIN24;            // Gain setting
   defaultChannelSettings[INPUT_TYPE_SET] = ADSINPUT_NORMAL; // input muxer setting
@@ -1993,29 +1993,28 @@ void OpenBCI_32bit_Library::initialize_ads()
     {
       channelSettings[i][j] = defaultChannelSettings[j]; // assign default settings
     }
-    useInBias[i] = true; // keeping track of Bias Generation // Min: changed to true
-    useSRB2[i] = false;   // keeping track of SRB2 inclusion // Min: changed to false
+    useInBias[i] = true; // keeping track of Bias Generation // changed to true, turning Bias ON
+    useSRB2[i] = false;   // keeping track of SRB2 inclusion // changed to false, having SRB2 not included
   }
-  boardUseSRB1 = daisyUseSRB1 = true; // Min: changed to true
+  boardUseSRB1 = daisyUseSRB1 = true; // changed to true
 
   writeChannelSettings(); // write settings to the on-board and on-daisy ADS if present
 
-  WREG(CONFIG3, 0b11101100, BOTH_ADS); // Min: Changing from 0b11101100 to 0b11111100
+  WREG(CONFIG3, 0b11101100, BOTH_ADS);
   delay(1); // enable internal reference drive and etc.
   for (int i = 0; i < numChannels; i++)
   { // turn off the impedance measure signal
-    leadOffSettings[i][PCHAN] = ON; // Min: changed to ON
+    leadOffSettings[i][PCHAN] = ON; // changed to ON to have leadoff detection ON from the beginning
     leadOffSettings[i][NCHAN] = OFF;
   }
   configureLeadOffDetection(LOFF_MAG_6NA, LOFF_FREQ_FS_4);
-  changeChannelLeadOffDetect(); // Min: Added
+  changeChannelLeadOffDetect();
 
-  // Min: hard command SRB1 to be on
   WREG(MISC1, 0x20, BOARD_ADS); // open SRB1 switch on-board
   if (daisyPresent)
   {
-    WREG(MISC1, 0x20, DAISY_ADS);
-  } // open SRB1 switch on-daisy
+    WREG(MISC1, 0x20, DAISY_ADS); // open SRB1 switch on-daisy
+  }
 
   verbosity = false; // when verbosity is true, there will be Serial feedback
   firstDataPacket = true;
@@ -3261,8 +3260,7 @@ void OpenBCI_32bit_Library::configureInternalTestSignal(byte amplitudeCode, byte
       freqCode = (RREG(CONFIG2, targetSS) & (0b00000011));
     freqCode &= 0b00000011;                               //only the last two bits are used
     amplitudeCode &= 0b00000100;                          //only this bit is used
-    //byte setting = 0b11010000 | freqCode | amplitudeCode; //compose the code
-    byte setting = 0b11010101;
+    byte setting = 0b11010000 | freqCode | amplitudeCode; //compose the code
     WREG(CONFIG2, setting, targetSS);
     delay(1);
     if (curBoardMode == BOARD_MODE_DEBUG || curDebugMode == DEBUG_MODE_ON)
@@ -4410,7 +4408,7 @@ char OpenBCI_32bit_Library::getNumberForAsciiChar(char asciiChar)
 * @param `setting` - [byte] - The byte you need a setting for....
 * @returns - [byte] - Retuns the proper byte for the input setting, defualts to 0
 */
-byte OpenBCI_32bit_Library::getDefaultChannelSettingForSetting(byte setting) // Min: Changing Default Channel Setting for WeDAQ
+byte OpenBCI_32bit_Library::getDefaultChannelSettingForSetting(byte setting) // Changing Default Channel Setting for WeDAQ
 {
   switch (setting)
   {
@@ -4423,9 +4421,9 @@ byte OpenBCI_32bit_Library::getDefaultChannelSettingForSetting(byte setting) // 
   case BIAS_SET:
     return YES;
   case SRB2_SET:
-    return NO;
+    return NO; // changed defaulted setting for SRB2 to NO
   case SRB1_SET:
-    return YES;
+    return YES; // changed defaulted setting for SRB1 to YES
   default:
     return YES;
   }
@@ -4515,4 +4513,4 @@ void OpenBCI_32bit_Library::resetLeadOffArrayToDefault(byte leadOffArray[][OPENB
   }
 }
 
-OpenBCI_32bit_Library board;
+OpenBCI_32bit_Library wedaq;

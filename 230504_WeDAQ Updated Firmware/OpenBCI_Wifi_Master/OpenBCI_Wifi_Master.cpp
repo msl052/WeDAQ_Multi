@@ -212,23 +212,6 @@ void OpenBCI_Wifi_Master_Class::loop(void) {
   }
 }
 
-void OpenBCI_Wifi_Master_Class::akshayloop(void) {
-  if (rx) {
-    if (millis() > timeOfLastRead + 20) {
-      //readData();
-      uint8_t numChars = (uint8_t)bufferRx[0];
-      if (numChars > 0 && numChars < WIFI_SPI_MAX_PACKET_SIZE) {
-        // Copy to the read from buffer
-        memcpy(bufferReadFrom, bufferRx, WIFI_SPI_MAX_PACKET_SIZE);
-        // Clear the rx recieve buffer
-        bufferRxClear();
-      }
-      timeOfLastRead = millis();
-    }
-  }
-}
-
-
 /**
  * [OpenBCI_Wifi_Master_Class::storeByteBufTx description]
  * @param  b {uint8_t} A single byte to store

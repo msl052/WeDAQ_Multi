@@ -70,8 +70,6 @@ public:
   boolean rx;
   boolean tx;
   boolean sentGains;
-  boolean streamState;
-  boolean unchain;
 
   char bufferRx[WIFI_SPI_MAX_PACKET_SIZE];
   char bufferReadFrom[WIFI_SPI_MAX_PACKET_SIZE];

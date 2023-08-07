@@ -10,7 +10,7 @@ insert header here
 #include <Arduino.h>
 #include <OpenBCI_Wifi_Master.h>
 #include <OpenBCI_Wifi_Master_Definitions.h>
-#include "OpenBCI_32bit_Library_Definitions.h"
+#include "OpenBCI_32bit_Library_Definitions_ISN.h"
 
 void __USER_ISR ADS_DRDY_Service(void);
 class OpenBCI_32bit_Library {
@@ -235,6 +235,8 @@ public:
   boolean useInBias[OPENBCI_NUMBER_OF_CHANNELS_DAISY];        // used to remember if we were included in Bias before channel power down
   boolean useSRB2[OPENBCI_NUMBER_OF_CHANNELS_DAISY];
   boolean verbosity; // turn on/off Serial verbosity
+  boolean streamState;
+  boolean unchain; // True turns ON unidirectional streaming mode
 
   byte boardChannelDataRaw[OPENBCI_NUMBER_BYTES_PER_ADS_SAMPLE];    // array to hold raw channel data
   byte channelSettings[OPENBCI_NUMBER_OF_CHANNELS_DAISY][OPENBCI_NUMBER_OF_CHANNEL_SETTINGS];  // array to hold current channel settings
@@ -385,6 +387,6 @@ private:
 };
 
 // This let's us call into the class from within the library if necessary
-extern OpenBCI_32bit_Library board;
+extern OpenBCI_32bit_Library wedaq;
 
 #endif
